@@ -5,6 +5,7 @@ const { allowedNodeEnvironmentFlags } = require('process');
 const db = require('./db/db.json')
 // const script = require("./public/assets/js/index");
 const fs= require("fs");
+const { parse } = require('path');
 const app = express();
 const PORT = 3001; 
 
@@ -23,40 +24,66 @@ app.get('/notes', (req, res) =>
     res.sendFile(path.join(__dirname,"public/notes.html"))
 );
 
+app.get('/notes', (req, res) =>{
+    const jsondata = fs.readFile('./db/db.json')
+    notes = JSON.parse(jsondata)
+    res.send(notes);
+}
+);
+
 
 app.post('/notes', (req, res)=> {
-    const { title, text } = req.body;
+    const { title, text, id } = req.body;
 
     if (title && text){
         const newNote = {
             title,
             text,
-        }
-        const stringnote = JSON.stringify(newNote);
-
-        fs.writeFile('./db/db.json', stringnote, (err)=>
-        err
-            ? console.error(err)
-            : console.log(
-                'New note has been written'
-            )
-        )
-
-        const response = {
-            status: 'success',
-            body: stringnote,
         };
+        fs.readFile('./db/db.json', 'utf8', (err, data) => {
 
-        console.log(response)
-        res.status(201).json(response)
+            if(err){
+                console.error(err);
+            } else {
+                
+                const parsedNotes = JSON.parse(data);
+                // parsedNotes.push(newNote);
+                console.log(parsedNotes);
+                console.log(newNote);
+                parsedNotes.push(newNote);
+                console.log(parsedNotes)
+
+                
+    
+            fs.writeFile('./db/db.json', JSON.stringify(parsedNotes, null, 4), (err) =>
+            err
+                ? console.error(err)
+                : console.log(
+                    'New note has been written'
+                )
+            )
+    
+            const response = {
+                status: 'success',
+                body: parsedNotes,
+            };
+    
+            console.log(response)
+            res.status(201).json(response)
+            }
+        }   );
+
     }
-}
-)
 
-
+})
 
 
 app.listen(PORT, () =>
   console.log(`Example app listening at http://localhost:${PORT}`)
 );
 
+function getnotes() {
+    const jsondata = fs.readFileSync('./db/db.json')
+    return JSON.parse(jsondata)
+    console.log(jsondata)
+}
